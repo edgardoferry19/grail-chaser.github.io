@@ -62,7 +62,7 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
     <>
       <div
         onClick={() => setIsModalOpen(true)}
-        className={`cursor-pointer overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+        className={`cursor-pointer overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md flex flex-col h-full ${
           isComplete ? 'border-amber-300' : 'border-stone-200'
         }`}
       >
@@ -91,7 +91,7 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
           )}
         </div>
 
-        <div className="space-y-3 p-4">
+        <div className="space-y-3 p-4 flex flex-col flex-1">
           <div>
             <div className="mb-1 flex items-start justify-between gap-2">
               <div className="flex-1">
@@ -105,29 +105,27 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
             </div>
           </div>
 
-          {!isClaimed ? (
-            <>
-              <div className="rounded-xl bg-stone-50 p-3">
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="font-medium text-stone-600">Target: ₱{watch.pricePhp.toLocaleString()}</span>
-                  <span className="font-semibold text-emerald-700">₱{savedAmount.toLocaleString()}</span>
-                </div>
-                <p className="text-xs text-stone-500">
-                  {Math.round(percentage)}% complete • ₱{(watch.pricePhp - savedAmount).toLocaleString()} left
-                </p>
-              </div>
+          <div className="rounded-xl bg-stone-50 p-3">
+            <div className="mb-1 flex items-center justify-between text-sm">
+              <span className="font-medium text-stone-600">Target: ₱{watch.pricePhp.toLocaleString()}</span>
+              <span className="font-semibold text-emerald-700">₱{savedAmount.toLocaleString()}</span>
+            </div>
+            <p className="text-xs text-stone-500">
+              {Math.round(percentage)}% complete • ₱{(watch.pricePhp - savedAmount).toLocaleString()} left
+            </p>
+          </div>
 
-              <ProgressBar currentAmount={savedAmount} totalAmount={watch.pricePhp} />
-            </>
+          {!isClaimed ? (
+            <ProgressBar currentAmount={savedAmount} totalAmount={watch.pricePhp} />
           ) : (
-            <div className="rounded-xl bg-amber-50 p-3 text-center font-semibold text-amber-800">
+            <div className="min-h-[76px] flex items-center justify-center rounded-xl bg-amber-50 p-3 text-center font-semibold text-amber-800">
               Claimed
             </div>
           )}
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className={`w-full rounded-xl py-2 text-sm font-medium transition ${
+            className={`mt-auto w-full rounded-xl py-2 text-sm font-medium transition ${
               isComplete
                 ? 'bg-amber-300 text-amber-900 hover:bg-amber-400'
                 : 'bg-stone-800 text-white hover:bg-stone-700'
