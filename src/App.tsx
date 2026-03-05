@@ -105,7 +105,16 @@ function App() {
       setPassword('');
     } catch (error) {
       console.error('Authentication failed:', error);
-      setAuthError('Unable to verify password right now. Try again.');
+      const firebaseCode =
+        typeof error === 'object' && error !== null && 'code' in error
+          ? String((error as { code?: unknown }).code)
+          : '';
+
+      if (firebaseCode.includes('unavailable')) {
+        setAuthError('Cannot reach Firebase right now. Check your connection and try again.');
+      } else {
+        setAuthError('Unable to verify password right now. Try again.');
+      }
     } finally {
       setAuthLoading(false);
     }
