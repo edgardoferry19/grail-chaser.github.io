@@ -163,20 +163,22 @@ export function WatchModal({
             <p className="text-sm italic text-stone-500">{watch.grailLevel}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 rounded-2xl bg-stone-50 p-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Target Price</p>
-              <p className="mt-1 text-2xl font-semibold text-stone-800">
-                ₱{watch.pricePhp.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-              </p>
+          {!isClaimed && (
+            <div className="grid grid-cols-2 gap-4 rounded-2xl bg-stone-50 p-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Target Price</p>
+                <p className="mt-1 text-2xl font-semibold text-stone-800">
+                  ₱{watch.pricePhp.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Saved</p>
+                <p className="mt-1 text-2xl font-semibold text-emerald-700">
+                  ₱{savedAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Saved</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-700">
-                ₱{savedAmount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-              </p>
-            </div>
-          </div>
+          )}
 
           {!isClaimed ? (
             <div>
@@ -213,7 +215,7 @@ export function WatchModal({
             </a>
           )}
 
-          {isComplete && !isEditing && (
+          {isComplete && !isClaimed && !isEditing && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
               <p className="font-semibold text-amber-800">You can claim this grail.</p>
               <p className="mt-1 text-sm text-amber-700">

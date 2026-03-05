@@ -63,7 +63,7 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
       <div
         onClick={() => setIsModalOpen(true)}
         className={`cursor-pointer overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md flex flex-col h-full ${
-          isComplete ? 'border-amber-300' : 'border-stone-200'
+          isComplete && !isClaimed ? 'border-amber-300' : 'border-stone-200'
         }`}
       >
         <div className="group relative h-48 overflow-hidden bg-stone-200">
@@ -105,15 +105,17 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
             </div>
           </div>
 
-          <div className="rounded-xl bg-stone-50 p-3">
-            <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="font-medium text-stone-600">Target: ₱{watch.pricePhp.toLocaleString()}</span>
-              <span className="font-semibold text-emerald-700">₱{savedAmount.toLocaleString()}</span>
+          {!isClaimed && (
+            <div className="rounded-xl bg-stone-50 p-3">
+              <div className="mb-1 flex items-center justify-between text-sm">
+                <span className="font-medium text-stone-600">Target: ₱{watch.pricePhp.toLocaleString()}</span>
+                <span className="font-semibold text-emerald-700">₱{savedAmount.toLocaleString()}</span>
+              </div>
+              <p className="text-xs text-stone-500">
+                {Math.round(percentage)}% complete • ₱{(watch.pricePhp - savedAmount).toLocaleString()} left
+              </p>
             </div>
-            <p className="text-xs text-stone-500">
-              {Math.round(percentage)}% complete • ₱{(watch.pricePhp - savedAmount).toLocaleString()} left
-            </p>
-          </div>
+          )}
 
           {!isClaimed ? (
             <ProgressBar currentAmount={savedAmount} totalAmount={watch.pricePhp} />
@@ -126,12 +128,12 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
           <button
             onClick={() => setIsModalOpen(true)}
             className={`mt-auto w-full rounded-xl py-2 text-sm font-medium transition ${
-              isComplete
+              isComplete && !isClaimed
                 ? 'bg-amber-300 text-amber-900 hover:bg-amber-400'
                 : 'bg-stone-800 text-white hover:bg-stone-700'
             }`}
           >
-            {isComplete ? 'View Details & Claim' : 'View Details'}
+            {isComplete && !isClaimed ? 'View Details & Claim' : 'View Details'}
           </button>
         </div>
       </div>

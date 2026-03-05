@@ -182,12 +182,13 @@ function App() {
   });
 
   // Compute average savings rate as the simple (unweighted) mean of
-  // individual grail completion percentages. This gives each watch equal
-  // influence regardless of price.
+  // individual grail completion percentages for active (not claimed) grails.
+  const activeWatches = watches.filter((w) => !w.claimed);
   const averageSavingsRate =
-    watches.length > 0
+    activeWatches.length > 0
       ? Math.round(
-          (watches.reduce((sum, w) => sum + Math.min(totalSavings / w.pricePhp, 1), 0) / watches.length) *
+          (activeWatches.reduce((sum, w) => sum + Math.min(totalSavings / w.pricePhp, 1), 0) /
+            activeWatches.length) *
             100
         )
       : 0;
