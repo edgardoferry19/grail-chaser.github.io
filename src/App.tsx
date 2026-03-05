@@ -161,23 +161,34 @@ function App() {
   };
 
   const getSavingsForWatch = (watchId: string) => {
-    // Calculate how much of the total savings goes towards this watch
-    // For now, we'll use a simple approach: allocate savings proportionally
-    // In a real app, you might want to track which watch each savings entry is for
+    // Since savings entries are not tracked per-watch, show how much of this
+    // watch would be covered by the pooled savings. We assume the full pool
+    // could be applied to any single grail (useful for "progress if you
+    // focused on this grail"). Cap at the watch price so UI stays sensible.
     if (watches.length === 0) return 0;
 
     const watchPrice = watches.find((w) => w.id === watchId)?.pricePhp || 0;
-    const totalPrice = watches.reduce((sum, w) => sum + w.pricePhp, 0);
+    if (watchPrice === 0) return 0;
 
-    if (totalPrice === 0) return 0;
-    return (totalSavings / totalPrice) * watchPrice;
+    return Math.min(totalSavings, watchPrice);
   };
 
   const sortedWatches = [...watches].sort((a, b) => {
     const aProgress = getSavingsForWatch(a.id) / a.pricePhp;
     const bProgress = getSavingsForWatch(b.id) / b.pricePhp;
-    return bProgress - aProgress; // Highest progress first
+    return bProgress - aProgress;
   });
+
+  // Compute average savings rate as the simple (unweighted) mean of
+  // individual grail completion percentages. This gives each watch equal
+  // influence regardless of price.
+  const averageSavingsRate =
+    watches.length > 0
+      ? Math.round(
+          (watches.reduce((sum, w) => sum + Math.min(totalSavings / w.pricePhp, 1), 0) / watches.length) *
+            100
+        )
+      : 0;
 
   if (authChecking) {
     return (
@@ -300,13 +311,7 @@ function App() {
               <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
                 <p className="text-xs uppercase tracking-wide text-rose-700/70">Average Savings Rate</p>
                 <p className="mt-1 text-3xl font-semibold text-rose-700">
-                  {watches.length > 0
-                    ? Math.round(
-                        (totalSavings /
-                          watches.reduce((sum, w) => sum + w.pricePhp, 0)) *
-                          100
-                      )
-                    : 0}
+                    {averageSavingsRate}
                   %
                 </p>
               </div>
