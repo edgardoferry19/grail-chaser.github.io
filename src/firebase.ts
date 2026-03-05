@@ -3,8 +3,6 @@ import {
   initializeFirestore,
   collection,
   addDoc,
-  getDocs,
-  getDoc,
   deleteDoc,
   doc,
   onSnapshot,
@@ -83,41 +81,6 @@ export const fetchSavings = (
   return unsubscribe;
 };
 
-export const getTotalSavings = async (): Promise<number> => {
-  const savingsCollection = collection(db, 'savings');
-  const snapshot = await getDocs(savingsCollection);
-  const savingsData: Record<string, any> = {};
-
-  snapshot.forEach((doc) => {
-    savingsData[doc.id] = doc.data();
-  });
-
-  let total = 0;
-  Object.values(savingsData).forEach((entry: any) => {
-    if (entry.type === '+') {
-      total += entry.amount;
-    } else if (entry.type === '-') {
-      total -= entry.amount;
-    }
-  });
-  return total;
-};
-
-export const verifyAccessPassword = async (inputPassword: string): Promise<boolean> => {
-  const passwordDoc = doc(db, 'auth', 'password');
-  const snapshot = await getDoc(passwordDoc);
-
-  if (!snapshot.exists()) {
-    return false;
-  }
-
-  const password = snapshot.data()?.password;
-  if (typeof password !== 'string') {
-    return false;
-  }
-
-  return password === inputPassword;
-};
 export const deleteWatch = async (watchId: string) => {
   const watchDoc = doc(db, 'watches', watchId);
   await deleteDoc(watchDoc);

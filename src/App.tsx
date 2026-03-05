@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { fetchWatches, fetchSavings, verifyAccessPassword } from './firebase';
+import { fetchWatches, fetchSavings } from './firebase';
 import { WatchForm } from './components/WatchForm';
 import { WatchCard } from './components/WatchCard';
 import { SavingsLog } from './components/SavingsLog';
 
 const AUTH_SESSION_KEY = 'grail_chaser_auth_session';
 const AUTH_SESSION_DURATION_MS = 1000 * 60 * 60 * 12;
+const APP_PASSWORD = import.meta.env.VITE_PASSWORD?.toString().trim();
 
 interface Watch {
   id: string;
@@ -25,7 +26,6 @@ function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
-  const [authLoading, setAuthLoading] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [dataError, setDataError] = useState('');
@@ -102,43 +102,30 @@ function App() {
     };
   }, [refreshKey, isAuthenticated]);
 
-  const handleAuthenticate = async (e: React.FormEvent) => {
+  const handleAuthenticate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) {
       setAuthError('Please enter your password.');
       return;
     }
 
-    setAuthLoading(true);
-    setAuthError('');
-    try {
-      const isValid = await verifyAccessPassword(password);
-      if (!isValid) {
-        setAuthError('Incorrect password. Please try again.');
-        return;
-      }
-
-      localStorage.setItem(
-        AUTH_SESSION_KEY,
-        JSON.stringify({ expiresAt: Date.now() + AUTH_SESSION_DURATION_MS })
-      );
-      setIsAuthenticated(true);
-      setPassword('');
-    } catch (error) {
-      console.error('Authentication failed:', error);
-      const firebaseCode =
-        typeof error === 'object' && error !== null && 'code' in error
-          ? String((error as { code?: unknown }).code)
-          : '';
-
-      if (firebaseCode.includes('unavailable')) {
-        setAuthError('Cannot reach Firebase right now. Check your connection and try again.');
-      } else {
-        setAuthError('Unable to verify password right now. Try again.');
-      }
-    } finally {
-      setAuthLoading(false);
+    if (!APP_PASSWORD) {
+      setAuthError('Access password is not configured. Set VITE_PASSWORD and redeploy.');
+      return;
     }
+
+    setAuthError('');
+    if (password.trim() !== APP_PASSWORD) {
+      setAuthError('Incorrect password. Please try again.');
+      return;
+    }
+
+    localStorage.setItem(
+      AUTH_SESSION_KEY,
+      JSON.stringify({ expiresAt: Date.now() + AUTH_SESSION_DURATION_MS })
+    );
+    setIsAuthenticated(true);
+    setPassword('');
   };
 
   const handleLogout = () => {
@@ -209,10 +196,9 @@ function App() {
 
             <button
               type="submit"
-              disabled={authLoading}
               className="w-full rounded-xl bg-stone-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-400"
             >
-              {authLoading ? 'Checking...' : 'Unlock'}
+              Unlock
             </button>
           </form>
         </div>
