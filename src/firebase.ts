@@ -41,51 +41,45 @@ export const addWatch = async (watchData: {
   return docRef.id;
 };
 
-export const fetchWatches = (callback: (watches: Record<string, any>) => void) => {
+export const fetchWatches = (
+  callback: (watches: Record<string, any>) => void,
+  onError?: (error: unknown) => void
+) => {
   const watchesCollection = collection(db, 'watches');
-  const unsubscribe = onSnapshot(watchesCollection, (snapshot) => {
-    const data: Record<string, any> = {};
-    snapshot.forEach((doc) => {
-      data[doc.id] = { ...doc.data(), id: doc.id };
-    });
-    callback(data);
-  });
+  const unsubscribe = onSnapshot(
+    watchesCollection,
+    (snapshot) => {
+      const data: Record<string, any> = {};
+      snapshot.forEach((doc) => {
+        data[doc.id] = { ...doc.data(), id: doc.id };
+      });
+      callback(data);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
   return unsubscribe;
 };
 
-export const deleteWatch = async (watchId: string) => {
-  const watchDoc = doc(db, 'watches', watchId);
-  await deleteDoc(watchDoc);
-};
-
-export const updateWatch = async (watchId: string, updates: Record<string, any>) => {
-  const watchDoc = doc(db, 'watches', watchId);
-  await updateDoc(watchDoc, updates);
-};
-
-// Savings operations
-export const addSavingsEntry = async (entry: {
-  date: string;
-  amount: number;
-  type: '+' | '-';
-  description: string;
-}) => {
+export const fetchSavings = (
+  callback: (savings: Record<string, any>) => void,
+  onError?: (error: unknown) => void
+) => {
   const savingsCollection = collection(db, 'savings');
-  await addDoc(savingsCollection, {
-    ...entry,
-    createdAt: new Date().toISOString(),
-  });
-};
-
-export const fetchSavings = (callback: (savings: Record<string, any>) => void) => {
-  const savingsCollection = collection(db, 'savings');
-  const unsubscribe = onSnapshot(savingsCollection, (snapshot) => {
-    const data: Record<string, any> = {};
-    snapshot.forEach((doc) => {
-      data[doc.id] = { ...doc.data(), id: doc.id };
-    });
-    callback(data);
-  });
+  const unsubscribe = onSnapshot(
+    savingsCollection,
+    (snapshot) => {
+      const data: Record<string, any> = {};
+      snapshot.forEach((doc) => {
+        data[doc.id] = { ...doc.data(), id: doc.id };
+      });
+      callback(data);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
   return unsubscribe;
 };
 
@@ -124,3 +118,27 @@ export const verifyAccessPassword = async (inputPassword: string): Promise<boole
 
   return password === inputPassword;
 };
+export const deleteWatch = async (watchId: string) => {
+  const watchDoc = doc(db, 'watches', watchId);
+  await deleteDoc(watchDoc);
+};
+
+export const updateWatch = async (watchId: string, updates: Record<string, any>) => {
+  const watchDoc = doc(db, 'watches', watchId);
+  await updateDoc(watchDoc, updates);
+};
+
+// Savings operations
+export const addSavingsEntry = async (entry: {
+  date: string;
+  amount: number;
+  type: '+' | '-';
+  description: string;
+}) => {
+  const savingsCollection = collection(db, 'savings');
+  await addDoc(savingsCollection, {
+    ...entry,
+    createdAt: new Date().toISOString(),
+  });
+};
+

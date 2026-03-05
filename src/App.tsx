@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchWatches, fetchSavings, getTotalSavings, verifyAccessPassword } from './firebase';
+import { fetchWatches, fetchSavings, verifyAccessPassword } from './firebase';
 import { WatchForm } from './components/WatchForm';
 import { WatchCard } from './components/WatchCard';
 import { SavingsLog } from './components/SavingsLog';
@@ -28,6 +28,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const [dataError, setDataError] = useState('');
 
   useEffect(() => {
     const raw = localStorage.getItem(AUTH_SESSION_KEY);
@@ -50,30 +51,50 @@ function App() {
   useEffect(() => {
     if (!isAuthenticated) {
       setLoading(false);
+      setDataError('');
       return;
     }
 
     setLoading(true);
+    setDataError('');
 
     // Subscribe to watches
-    const unsubscribeWatches = fetchWatches((watchesData) => {
-      const watchesArray: Watch[] = Object.entries(watchesData).map(
-        ([id, data]: [string, any]) => ({
-          id,
-          ...data,
-        })
-      );
-      setWatches(watchesArray);
-    });
+    const unsubscribeWatches = fetchWatches(
+      (watchesData) => {
+        const watchesArray: Watch[] = Object.entries(watchesData).map(
+          ([id, data]: [string, any]) => ({
+            id,
+            ...data,
+          })
+        );
+        setWatches(watchesArray);
+      },
+      (error) => {
+        console.error('Watches listener failed:', error);
+        setDataError('Live watch data is temporarily unavailable. Retrying automatically...');
+        setLoading(false);
+      }
+    );
 
     // Subscribe to savings
-    const unsubscribeSavings = fetchSavings((savingsData) => {
-      setSavings(savingsData);
-      getTotalSavings().then((total) => {
+    const unsubscribeSavings = fetchSavings(
+      (savingsData) => {
+        setSavings(savingsData);
+        const total = Object.values(savingsData).reduce((sum, entry: any) => {
+          if (entry.type === '+') return sum + (entry.amount || 0);
+          if (entry.type === '-') return sum - (entry.amount || 0);
+          return sum;
+        }, 0);
         setTotalSavings(total);
+        setDataError('');
         setLoading(false);
-      });
-    });
+      },
+      (error) => {
+        console.error('Savings listener failed:', error);
+        setDataError('Live savings data is temporarily unavailable. Retrying automatically...');
+        setLoading(false);
+      }
+    );
 
     return () => {
       unsubscribeWatches();
@@ -130,6 +151,7 @@ function App() {
   };
 
   const handleRefresh = () => {
+    setDataError('');
     setRefreshKey((prev) => prev + 1);
   };
 
@@ -226,6 +248,12 @@ function App() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {dataError && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            {dataError}
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
