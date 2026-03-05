@@ -32,6 +32,8 @@ interface Watch {
   grailLevel: string;
   imageUrl?: string;
   createdAt?: string;
+  claimed?: boolean;
+  claimedAt?: string;
 }
 
 function App() {

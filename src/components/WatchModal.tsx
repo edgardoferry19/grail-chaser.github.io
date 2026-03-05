@@ -18,6 +18,8 @@ interface WatchModalProps {
     grailLevel: string;
     imageUrl?: string;
     createdAt?: string;
+    claimed?: boolean;
+    claimedAt?: string;
   };
   isOpen: boolean;
   onClose: () => void;
@@ -47,6 +49,7 @@ export function WatchModal({
   });
 
   const isComplete = savedAmount >= watch.pricePhp;
+  const isClaimed = !!watch.claimed;
 
   const syncEditForm = () => {
     setEditForm({
@@ -175,20 +178,29 @@ export function WatchModal({
             </div>
           </div>
 
-          <div>
-            <p className="mb-3 text-sm font-medium text-stone-600">Progress to Grail</p>
-            <div className="h-3 w-full overflow-hidden rounded-full bg-stone-200">
-              <div
-                className={`h-full bg-gradient-to-r from-amber-300 to-emerald-300 transition-all duration-500 ease-out ${
-                  isComplete ? 'animate-pulse' : ''
-                }`}
-                style={{ width: `${Math.min((savedAmount / watch.pricePhp) * 100, 100)}%` }}
-              ></div>
+          {!isClaimed ? (
+            <div>
+              <p className="mb-3 text-sm font-medium text-stone-600">Progress to Grail</p>
+              <div className="h-3 w-full overflow-hidden rounded-full bg-stone-200">
+                <div
+                  className={`h-full bg-gradient-to-r from-amber-300 to-emerald-300 transition-all duration-500 ease-out ${
+                    isComplete ? 'animate-pulse' : ''
+                  }`}
+                  style={{ width: `${Math.min((savedAmount / watch.pricePhp) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <p className="mt-2 text-sm text-stone-500">
+                {Math.round((savedAmount / watch.pricePhp) * 100)}% complete
+              </p>
             </div>
-            <p className="mt-2 text-sm text-stone-500">
-              {Math.round((savedAmount / watch.pricePhp) * 100)}% complete
-            </p>
-          </div>
+          ) : (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="font-semibold text-amber-800">This grail was claimed.</p>
+              {watch.claimedAt && (
+                <p className="mt-1 text-sm text-amber-700">Claimed on {new Date(watch.claimedAt).toLocaleDateString()}</p>
+              )}
+            </div>
+          )}
 
           {watch.purchaseLink && !isEditing && (
             <a
@@ -290,7 +302,7 @@ export function WatchModal({
               </div>
             </form>
           ) : (
-            <div className="flex flex-wrap gap-3 border-t border-stone-200 pt-4">
+              <div className="flex flex-wrap gap-3 border-t border-stone-200 pt-4">
               <button
                 onClick={() => setIsEditing(true)}
                 className="rounded-xl bg-stone-200 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-300"
@@ -303,7 +315,7 @@ export function WatchModal({
               >
                 Delete Grail
               </button>
-              {isComplete && (
+              {!isClaimed && isComplete && (
                 <button
                   onClick={handleClaim}
                   disabled={loading || isProgress}
@@ -312,7 +324,16 @@ export function WatchModal({
                   {loading ? 'Processing...' : '✨ Grail Claimed'}
                 </button>
               )}
-              {!isComplete && (
+
+              {isClaimed && (
+                <button
+                  onClick={handleClose}
+                  className="ml-auto rounded-xl bg-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-400"
+                >
+                  Close
+                </button>
+              )}
+              {!isClaimed && !isComplete && (
                 <button
                   onClick={handleClose}
                   className="ml-auto rounded-xl bg-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-400"

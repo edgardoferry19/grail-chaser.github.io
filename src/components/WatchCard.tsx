@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { WatchModal } from './WatchModal';
 import { ProgressBar } from './ProgressBar';
-import { addSavingsEntry } from '../firebase';
+import { addSavingsEntry, updateWatch } from '../firebase';
 
 interface WatchCardProps {
   watch: {
@@ -12,6 +12,8 @@ interface WatchCardProps {
     grailLevel: string;
     imageUrl?: string;
     createdAt?: string;
+    claimed?: boolean;
+    claimedAt?: string;
   };
   savedAmount: number;
   onRefresh: () => void;
@@ -31,6 +33,12 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
         type: '-',
         description: `${watch.model} obtained`,
       });
+      // Mark watch as claimed so UI no longer shows progress
+      try {
+        await updateWatch(watch.id, { claimed: true, claimedAt: new Date().toISOString() });
+      } catch (err) {
+        console.error('Failed to mark watch claimed:', err);
+      }
       onRefresh();
     } catch (error) {
       console.error('Error claiming grail:', error);
@@ -47,6 +55,7 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
   };
 
   const isComplete = savedAmount >= watch.pricePhp;
+  const isClaimed = !!watch.claimed;
   const percentage = (savedAmount / watch.pricePhp) * 100;
 
   return (
@@ -73,7 +82,7 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
               No image
             </div>
           )}
-          {isComplete && (
+          {isComplete && !isClaimed && (
             <div className="absolute inset-0 flex items-center justify-center bg-amber-100/70">
               <div className="rounded-xl border border-amber-200 bg-white/90 px-4 py-2 text-center text-sm font-semibold text-amber-800 shadow-sm">
                 Ready to claim
@@ -96,19 +105,25 @@ export function WatchCard({ watch, savedAmount, onRefresh }: WatchCardProps) {
             </div>
           </div>
 
-          <div className="rounded-xl bg-stone-50 p-3">
-            <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="font-medium text-stone-600">Target: ₱{watch.pricePhp.toLocaleString()}</span>
-              <span className="font-semibold text-emerald-700">
-                ₱{savedAmount.toLocaleString()}
-              </span>
-            </div>
-            <p className="text-xs text-stone-500">
-              {Math.round(percentage)}% complete • ₱{(watch.pricePhp - savedAmount).toLocaleString()} left
-            </p>
-          </div>
+          {!isClaimed ? (
+            <>
+              <div className="rounded-xl bg-stone-50 p-3">
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="font-medium text-stone-600">Target: ₱{watch.pricePhp.toLocaleString()}</span>
+                  <span className="font-semibold text-emerald-700">₱{savedAmount.toLocaleString()}</span>
+                </div>
+                <p className="text-xs text-stone-500">
+                  {Math.round(percentage)}% complete • ₱{(watch.pricePhp - savedAmount).toLocaleString()} left
+                </p>
+              </div>
 
-          <ProgressBar currentAmount={savedAmount} totalAmount={watch.pricePhp} />
+              <ProgressBar currentAmount={savedAmount} totalAmount={watch.pricePhp} />
+            </>
+          ) : (
+            <div className="rounded-xl bg-amber-50 p-3 text-center font-semibold text-amber-800">
+              Claimed
+            </div>
+          )}
 
           <button
             onClick={() => setIsModalOpen(true)}
