@@ -35,7 +35,9 @@ export function SavingsLog({ savings, onRefresh }: SavingsLogProps) {
   }));
 
   const sortedSavings = [...savingsArray].sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
+    const aTs = a.createdAt ? new Date(a.createdAt).getTime() : new Date(a.date).getTime();
+    const bTs = b.createdAt ? new Date(b.createdAt).getTime() : new Date(b.date).getTime();
+    return bTs - aTs;
   });
 
   const handleAddSavings = async (e: React.FormEvent) => {
