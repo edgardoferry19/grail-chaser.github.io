@@ -162,7 +162,7 @@ export function SavingsLog({ savings, onRefresh }: SavingsLogProps) {
                       onChange={(e) => setFormData((prev) => ({ ...prev, amount: e.target.value }))}
                       placeholder="5000"
                       min="0"
-                      step="100"
+                      step="1"
                       className="w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 outline-none ring-0 transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
                       required
                     />

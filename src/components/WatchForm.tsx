@@ -131,7 +131,7 @@ export function WatchForm({ onWatchAdded }: WatchFormProps) {
                   onChange={handleChange}
                   placeholder="50000"
                   min="0"
-                  step="100"
+                  step="1"
                   className="w-full rounded-xl border border-stone-200 px-3 py-2 text-stone-700 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
                   required
                 />
