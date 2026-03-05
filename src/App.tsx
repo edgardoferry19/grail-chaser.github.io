@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { fetchWatches, fetchSavings, getTotalSavings } from './firebase';
+import { fetchWatches, fetchSavings, getTotalSavings, verifyAccessPassword } from './firebase';
 import { WatchForm } from './components/WatchForm';
 import { WatchCard } from './components/WatchCard';
 import { SavingsLog } from './components/SavingsLog';
+
+const AUTH_SESSION_KEY = 'grail_chaser_auth_session';
+const AUTH_SESSION_DURATION_MS = 1000 * 60 * 60 * 12;
 
 interface Watch {
   id: string;
@@ -20,9 +23,36 @@ function App() {
   const [totalSavings, setTotalSavings] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+
+  useEffect(() => {
+    const raw = localStorage.getItem(AUTH_SESSION_KEY);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as { expiresAt?: number };
+        if (parsed.expiresAt && parsed.expiresAt > Date.now()) {
+          setIsAuthenticated(true);
+        } else {
+          localStorage.removeItem(AUTH_SESSION_KEY);
+        }
+      } catch {
+        localStorage.removeItem(AUTH_SESSION_KEY);
+      }
+    }
+    setAuthChecking(false);
+  }, []);
 
   // Fetch watches and savings on mount and when refresh key changes
   useEffect(() => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     // Subscribe to watches
@@ -49,7 +79,46 @@ function App() {
       unsubscribeWatches();
       unsubscribeSavings();
     };
-  }, [refreshKey]);
+  }, [refreshKey, isAuthenticated]);
+
+  const handleAuthenticate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password.trim()) {
+      setAuthError('Please enter your password.');
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError('');
+    try {
+      const isValid = await verifyAccessPassword(password);
+      if (!isValid) {
+        setAuthError('Incorrect password. Please try again.');
+        return;
+      }
+
+      localStorage.setItem(
+        AUTH_SESSION_KEY,
+        JSON.stringify({ expiresAt: Date.now() + AUTH_SESSION_DURATION_MS })
+      );
+      setIsAuthenticated(true);
+      setPassword('');
+    } catch (error) {
+      console.error('Authentication failed:', error);
+      setAuthError('Unable to verify password right now. Try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem(AUTH_SESSION_KEY);
+    setIsAuthenticated(false);
+    setSavings({});
+    setWatches([]);
+    setTotalSavings(0);
+    setRefreshKey(0);
+  };
 
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
@@ -74,6 +143,52 @@ function App() {
     return bProgress - aProgress; // Highest progress first
   });
 
+  if (authChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-stone-100 px-4">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-stone-300 border-t-emerald-400"></div>
+          <p className="text-sm text-stone-500">Preparing secure access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-stone-100 px-4">
+        <div className="w-full max-w-md rounded-3xl border border-stone-200 bg-white p-6 shadow-sm sm:p-8">
+          <h1 className="text-2xl font-semibold text-stone-800">Grail Chaser</h1>
+          <p className="mt-2 text-sm text-stone-500">Enter your access password to continue.</p>
+
+          <form onSubmit={handleAuthenticate} className="mt-6 space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-stone-700">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-stone-200 px-3 py-2 text-stone-700 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                placeholder="Enter password"
+                autoFocus
+              />
+            </div>
+
+            {authError && <p className="text-sm text-rose-600">{authError}</p>}
+
+            <button
+              type="submit"
+              disabled={authLoading}
+              className="w-full rounded-xl bg-stone-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:bg-stone-400"
+            >
+              {authLoading ? 'Checking...' : 'Unlock'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-stone-100 text-stone-800">
       <header className="sticky top-0 z-30 border-b border-stone-200/70 bg-stone-100/90 backdrop-blur">
@@ -90,6 +205,12 @@ function App() {
               <p className="text-3xl font-semibold text-emerald-700">
                 ₱{totalSavings.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </p>
+              <button
+                onClick={handleLogout}
+                className="mt-2 text-xs font-medium text-stone-400 transition hover:text-stone-600"
+              >
+                Lock
+              </button>
             </div>
           </div>
         </div>

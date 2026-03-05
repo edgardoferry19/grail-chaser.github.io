@@ -4,6 +4,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   deleteDoc,
   doc,
   onSnapshot,
@@ -104,4 +105,20 @@ export const getTotalSavings = async (): Promise<number> => {
     }
   });
   return total;
+};
+
+export const verifyAccessPassword = async (inputPassword: string): Promise<boolean> => {
+  const passwordDoc = doc(db, 'auth', 'password');
+  const snapshot = await getDoc(passwordDoc);
+
+  if (!snapshot.exists()) {
+    return false;
+  }
+
+  const password = snapshot.data()?.password;
+  if (typeof password !== 'string') {
+    return false;
+  }
+
+  return password === inputPassword;
 };
