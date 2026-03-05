@@ -6,7 +6,23 @@ import { SavingsLog } from './components/SavingsLog';
 
 const AUTH_SESSION_KEY = 'grail_chaser_auth_session';
 const AUTH_SESSION_DURATION_MS = 1000 * 60 * 60 * 12;
-const APP_PASSWORD = import.meta.env.VITE_PASSWORD?.toString().trim();
+
+const normalizePassword = (value: string) => {
+  const trimmed = value
+    .trim()
+    .replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+};
+
+const APP_PASSWORD = normalizePassword(import.meta.env.VITE_PASSWORD?.toString() || '');
 
 interface Watch {
   id: string;
@@ -104,7 +120,9 @@ function App() {
 
   const handleAuthenticate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password.trim()) {
+    const normalizedInputPassword = normalizePassword(password);
+
+    if (!normalizedInputPassword) {
       setAuthError('Please enter your password.');
       return;
     }
@@ -115,7 +133,7 @@ function App() {
     }
 
     setAuthError('');
-    if (password.trim() !== APP_PASSWORD) {
+    if (normalizedInputPassword !== APP_PASSWORD) {
       setAuthError('Incorrect password. Please try again.');
       return;
     }
